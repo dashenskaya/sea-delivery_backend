@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Каталог морских маршрутов</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/styles/style.css">
+</head>
+
+<body>
+
+<main class="phone standard-page">
+
+    <header class="page-header">
+        Морские маршруты
+    </header>
+
+    <section class="page-content catalog-content">
+
+        <h1 class="page-title">
+            Каталог маршрутов
+        </h1>
+
+        <form
+            class="filter-form"
+            method="GET"
+            action="/sea-routes/catalog">
+
+            <label for="max-distance-nautical-miles">
+                Максимальное расстояние, мор. мили
+            </label>
+
+            <input
+                id="max-distance-nautical-miles"
+                name="max_distance_nautical_miles"
+                type="number"
+                value="{{ .maxDistanceNauticalMiles }}"
+                placeholder="До: 10 500">
+
+            <button
+                class="main-button"
+                type="submit">
+
+                Применить фильтр
+
+            </button>
+
+        </form>
+
+        <div class="route-grid">
+
+            {{ range .seaRoutes }}
+
+            <a
+                class="route-card"
+                href="/sea-routes/feed?sea_route_id={{ .ID }}"
+                data-image-url="{{ .ImageURL }}"
+                data-video-url="{{ .VideoURL }}">
+
+                <img
+                    class="route-card-image"
+                    src="{{ .ImageURL }}"
+                    alt="{{ .DeparturePort }} — {{ .ArrivalPort }}">
+
+                <div class="route-card-content">
+
+                    <div class="route-card-heading">
+
+                        <div>
+
+                            <h2>
+                                {{ .DeparturePort }}
+                            </h2>
+
+                            <p class="route-destination">
+                                → {{ .ArrivalPort }}
+                            </p>
+
+                        </div>
+
+                        <div class="card-like">
+
+                            <span>
+                                ♡
+                            </span>
+
+                            <small>
+                                {{ .LikesCount }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                    <p class="route-distance">
+                        {{ .DistanceNauticalMiles }} мор. миль
+                    </p>
+
+                    <div class="card-divider"></div>
+
+                    <span class="route-more">
+                        Подробнее →
+                    </span>
+
+                </div>
+
+            </a>
+
+            {{ end }}
+
+        </div>
+
+    </section>
+
+    <nav class="bottom-nav">
+
+        <a
+            href="/sea-routes/feed"
+            class="nav-item">
+
+            <span class="nav-icon">⌂</span>
+            <span>Лента</span>
+
+        </a>
+
+        <a
+            href="/sea-routes/add"
+            class="nav-item">
+
+            <span class="nav-icon">＋</span>
+            <span>Добавить</span>
+
+        </a>
+
+        <a
+            href="/sea-routes/catalog"
+            class="nav-item active">
+
+            <span class="nav-icon">▦</span>
+            <span>Каталог</span>
+
+        </a>
+
+    </nav>
+
+</main>
+
+</body>
+</html>
