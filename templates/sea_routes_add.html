@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Добавление морского маршрута</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/styles/sea_routes.css">
+</head>
+
+<body>
+
+<main class="phone standard-page">
+
+    <header class="page-header">
+        Морские маршруты
+    </header>
+
+    <section class="page-content add-content">
+
+        <h1 class="page-title">
+            Новый маршрут
+        </h1>
+
+        <form class="route-form">
+
+            <div class="media-field">
+
+                <label class="media-title">
+                    Видео
+                </label>
+
+                <video
+                    class="media-video-preview"
+                    src="{{ .seaRoute.VideoURL }}"
+                    poster="{{ .seaRoute.ImageURL }}"
+                    muted
+                    controls>
+                </video>
+
+                <input
+                    class="media-file-input-visible"
+                    type="file"
+                    accept="video/*">
+
+            </div>
+
+            <div class="media-field">
+
+                <label class="media-title">
+                    Фото
+                </label>
+
+                <img
+                    class="media-photo-preview"
+                    src="{{ .seaRoute.ImageURL }}"
+                    alt="Фото морского маршрута">
+
+                <input
+                    class="media-file-input-visible"
+                    type="file"
+                    accept="image/*">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="departure-port">
+                    Порт отправления
+                </label>
+
+                <input
+                    id="departure-port"
+                    type="text"
+                    value="{{ .seaRoute.DeparturePort }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="arrival-port">
+                    Порт назначения
+                </label>
+
+                <input
+                    id="arrival-port"
+                    type="text"
+                    value="{{ .seaRoute.ArrivalPort }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="distance-nautical-miles">
+                    Расстояние маршрута, мор. мили
+                </label>
+
+                <input
+                    id="distance-nautical-miles"
+                    type="number"
+                    value="{{ .seaRoute.DistanceNauticalMiles }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="average-port-delay-hours">
+                    Средняя задержка в портах, ч
+                </label>
+
+                <input
+                    id="average-port-delay-hours"
+                    type="number"
+                    value="{{ .seaRoute.AveragePortDelayHours }}">
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="description">
+                    Описание
+                </label>
+
+                <textarea
+                    id="description"
+                    rows="3">{{ .seaRoute.Description }}</textarea>
+
+            </div>
+
+        </form>
+
+    </section>
+
+    <nav class="bottom-nav">
+
+        <a href="/sea_routes/feed" class="nav-item">
+            <span class="nav-icon">⌂</span>
+            <span>Лента</span>
+        </a>
+
+        <a href="/sea_routes/add" class="nav-item active">
+            <span class="nav-icon">＋</span>
+            <span>Добавить</span>
+        </a>
+
+        <a href="/sea_routes/catalog" class="nav-item">
+            <span class="nav-icon">▦</span>
+            <span>Каталог</span>
+        </a>
+
+    </nav>
+
+</main>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-module sea_delivery
+module sea_routes
 
 go 1.27.1
 

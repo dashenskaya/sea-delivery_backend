@@ -6,64 +6,108 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sea_delivery/internal/app/repository"
+	"sea_routes/internal/app/repository"
 )
 
+func getLikesCount(likedUserIDs []int) int {
+	return len(likedUserIDs)
+}
+
 func SeaRouteFeedHandler(ctx *gin.Context) {
-	var publishedSeaRoutes []repository.SeaRoute
+	var firstPublishedSeaRoute repository.SeaRoute
+	firstPublishedFound := false
 
 	for _, seaRoute := range repository.SeaRoutes {
-		if seaRoute.Status == repository.SeaRouteStatusPublished {
-			seaRoute.LikesCount = len(seaRoute.LikedUserIDs)
-			publishedSeaRoutes = append(publishedSeaRoutes, seaRoute)
+		if seaRoute.Status != repository.SeaRouteStatusPublished {
+			continue
+		}
+
+		seaRoute.LikesCount = getLikesCount(seaRoute.LikedUserIDs)
+
+		if !firstPublishedFound || seaRoute.ID < firstPublishedSeaRoute.ID {
+			firstPublishedSeaRoute = seaRoute
+			firstPublishedFound = true
 		}
 	}
 
-	if len(publishedSeaRoutes) == 0 {
+	if !firstPublishedFound {
 		ctx.String(http.StatusNotFound, "Опубликованные морские маршруты не найдены")
 		return
 	}
 
-	currentIndex := 0
 	seaRouteIDString := ctx.Query("sea_route_id")
 
-	if seaRouteIDString != "" {
-		seaRouteID, err := strconv.Atoi(seaRouteIDString)
+	if seaRouteIDString == "" {
+		ctx.HTML(
+			http.StatusOK,
+			"sea_routes_feed.html",
+			gin.H{
+				"seaRoute": firstPublishedSeaRoute,
+			},
+		)
+		return
+	}
 
-		if err != nil {
-			ctx.String(http.StatusBadRequest, "Некорректный идентификатор маршрута")
-			return
+	currentSeaRouteID, err := strconv.Atoi(seaRouteIDString)
+
+	if err != nil {
+		ctx.String(http.StatusBadRequest, "Некорректный идентификатор маршрута")
+		return
+	}
+
+	var currentSeaRoute repository.SeaRoute
+	currentSeaRouteFound := false
+
+	for _, seaRoute := range repository.SeaRoutes {
+		if seaRoute.Status != repository.SeaRouteStatusPublished {
+			continue
 		}
 
-		found := false
-
-		for index, seaRoute := range publishedSeaRoutes {
-			if seaRoute.ID == seaRouteID {
-				currentIndex = index
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			ctx.String(http.StatusNotFound, "Морской маршрут не найден")
-			return
+		if seaRoute.ID == currentSeaRouteID {
+			seaRoute.LikesCount = getLikesCount(seaRoute.LikedUserIDs)
+			currentSeaRoute = seaRoute
+			currentSeaRouteFound = true
+			break
 		}
 	}
 
-	if ctx.Query("next") == "true" {
-		currentIndex++
+	if !currentSeaRouteFound {
+		ctx.String(http.StatusNotFound, "Морской маршрут не найден")
+		return
+	}
 
-		if currentIndex >= len(publishedSeaRoutes) {
-			currentIndex = 0
+	if ctx.Query("next") == "true" {
+		var nextSeaRoute repository.SeaRoute
+		nextSeaRouteFound := false
+
+		for _, seaRoute := range repository.SeaRoutes {
+			if seaRoute.Status != repository.SeaRouteStatusPublished {
+				continue
+			}
+
+			if seaRoute.ID <= currentSeaRouteID {
+				continue
+			}
+
+			if !nextSeaRouteFound || seaRoute.ID < nextSeaRoute.ID {
+				seaRoute.LikesCount = getLikesCount(seaRoute.LikedUserIDs)
+				nextSeaRoute = seaRoute
+				nextSeaRouteFound = true
+			}
+		}
+
+		if nextSeaRouteFound {
+			currentSeaRoute = nextSeaRoute
+		} else {
+			currentSeaRoute = firstPublishedSeaRoute
 		}
 	}
 
 	ctx.HTML(
 		http.StatusOK,
-		"sea_route_feed.html",
+		"sea_routes_feed.html",
 		gin.H{
-			"seaRoute": publishedSeaRoutes[currentIndex],
+			"seaRoute": currentSeaRoute,
 		},
 	)
 }
@@ -71,11 +115,11 @@ func SeaRouteFeedHandler(ctx *gin.Context) {
 func SeaRouteAddHandler(ctx *gin.Context) {
 	for _, seaRoute := range repository.SeaRoutes {
 		if seaRoute.Status == repository.SeaRouteStatusDraft {
-			seaRoute.LikesCount = len(seaRoute.LikedUserIDs)
+			seaRoute.LikesCount = getLikesCount(seaRoute.LikedUserIDs)
 
 			ctx.HTML(
 				http.StatusOK,
-				"sea_route_add.html",
+				"sea_routes_add.html",
 				gin.H{
 					"seaRoute": seaRoute,
 				},
@@ -89,10 +133,22 @@ func SeaRouteAddHandler(ctx *gin.Context) {
 }
 
 func SeaRouteCatalogHandler(ctx *gin.Context) {
-	var publishedSeaRoutes []repository.SeaRoute
+	minDistanceNauticalMiles := 0
+	maxDistanceNauticalMiles := 16000
 
+	minDistanceString := ctx.Query("min_distance_nautical_miles")
 	maxDistanceString := ctx.Query("max_distance_nautical_miles")
-	maxDistanceNauticalMiles := 0
+
+	if minDistanceString != "" {
+		value, err := strconv.Atoi(minDistanceString)
+
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Некорректное минимальное расстояние")
+			return
+		}
+
+		minDistanceNauticalMiles = value
+	}
 
 	if maxDistanceString != "" {
 		value, err := strconv.Atoi(maxDistanceString)
@@ -105,26 +161,38 @@ func SeaRouteCatalogHandler(ctx *gin.Context) {
 		maxDistanceNauticalMiles = value
 	}
 
+	if minDistanceNauticalMiles > maxDistanceNauticalMiles {
+		minDistanceNauticalMiles, maxDistanceNauticalMiles =
+			maxDistanceNauticalMiles, minDistanceNauticalMiles
+	}
+
+	var publishedSeaRoutes []repository.SeaRoute
+
 	for _, seaRoute := range repository.SeaRoutes {
 		if seaRoute.Status != repository.SeaRouteStatusPublished {
 			continue
 		}
 
-		if maxDistanceString != "" &&
-			seaRoute.DistanceNauticalMiles > maxDistanceNauticalMiles {
+		if seaRoute.DistanceNauticalMiles < minDistanceNauticalMiles {
 			continue
 		}
 
-		seaRoute.LikesCount = len(seaRoute.LikedUserIDs)
+		if seaRoute.DistanceNauticalMiles > maxDistanceNauticalMiles {
+			continue
+		}
+
+		seaRoute.LikesCount = getLikesCount(seaRoute.LikedUserIDs)
+
 		publishedSeaRoutes = append(publishedSeaRoutes, seaRoute)
 	}
 
 	ctx.HTML(
 		http.StatusOK,
-		"sea_route_catalog.html",
+		"sea_routes_catalog.html",
 		gin.H{
 			"seaRoutes":                publishedSeaRoutes,
-			"maxDistanceNauticalMiles": maxDistanceString,
+			"minDistanceNauticalMiles": minDistanceNauticalMiles,
+			"maxDistanceNauticalMiles": maxDistanceNauticalMiles,
 		},
 	)
 }

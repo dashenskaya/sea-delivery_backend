@@ -12,7 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="stylesheet" href="/static/styles/sea_routes.css">
 </head>
 
 <body>
@@ -30,27 +30,52 @@
         </h1>
 
         <form
-            class="filter-form"
+            class="range-filter"
             method="GET"
-            action="/sea-routes/catalog">
+            action="/sea_routes/catalog">
 
-            <label for="max-distance-nautical-miles">
-                Максимальное расстояние, мор. мили
-            </label>
+            <div class="range-area">
 
-            <input
-                id="max-distance-nautical-miles"
-                name="max_distance_nautical_miles"
-                type="number"
-                value="{{ .maxDistanceNauticalMiles }}"
-                placeholder="До: 10 500">
+                <div class="range-heading">
+
+                    <span>
+                        от {{ .minDistanceNauticalMiles }}
+                    </span>
+
+                    <span>
+                        до {{ .maxDistanceNauticalMiles }} мор. миль
+                    </span>
+
+                </div>
+
+                <div class="double-range">
+
+                    <input
+                        class="range-input range-min"
+                        type="range"
+                        name="min_distance_nautical_miles"
+                        min="0"
+                        max="16000"
+                        step="100"
+                        value="{{ .minDistanceNauticalMiles }}">
+
+                    <input
+                        class="range-input range-max"
+                        type="range"
+                        name="max_distance_nautical_miles"
+                        min="0"
+                        max="16000"
+                        step="100"
+                        value="{{ .maxDistanceNauticalMiles }}">
+
+                </div>
+
+            </div>
 
             <button
-                class="main-button"
+                class="filter-button"
                 type="submit">
-
-                Применить фильтр
-
+                найти
             </button>
 
         </form>
@@ -61,7 +86,7 @@
 
             <a
                 class="route-card"
-                href="/sea-routes/feed?sea_route_id={{ .ID }}"
+                href="/sea_routes/feed?sea_route_id={{ .ID }}"
                 data-image-url="{{ .ImageURL }}"
                 data-video-url="{{ .VideoURL }}">
 
@@ -88,9 +113,7 @@
 
                         <div class="card-like">
 
-                            <span>
-                                ♡
-                            </span>
+                            <span>♡</span>
 
                             <small>
                                 {{ .LikesCount }}
@@ -103,8 +126,6 @@
                     <p class="route-distance">
                         {{ .DistanceNauticalMiles }} мор. миль
                     </p>
-
-                    <div class="card-divider"></div>
 
                     <span class="route-more">
                         Подробнее →
@@ -122,31 +143,19 @@
 
     <nav class="bottom-nav">
 
-        <a
-            href="/sea-routes/feed"
-            class="nav-item">
-
+        <a href="/sea_routes/feed" class="nav-item">
             <span class="nav-icon">⌂</span>
             <span>Лента</span>
-
         </a>
 
-        <a
-            href="/sea-routes/add"
-            class="nav-item">
-
+        <a href="/sea_routes/add" class="nav-item">
             <span class="nav-icon">＋</span>
             <span>Добавить</span>
-
         </a>
 
-        <a
-            href="/sea-routes/catalog"
-            class="nav-item active">
-
+        <a href="/sea_routes/catalog" class="nav-item active">
             <span class="nav-icon">▦</span>
             <span>Каталог</span>
-
         </a>
 
     </nav>

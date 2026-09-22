@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"sea_delivery/internal/app/handler"
+	"sea_routes/internal/app/handler"
 )
 
 func StartServer() {
@@ -16,9 +16,9 @@ func StartServer() {
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "./resources")
 
-	router.GET("/sea-routes/feed", handler.SeaRouteFeedHandler)
-	router.GET("/sea-routes/add", handler.SeaRouteAddHandler)
-	router.GET("/sea-routes/catalog", handler.SeaRouteCatalogHandler)
+	router.GET("/sea_routes/feed", handler.SeaRouteFeedHandler)
+	router.GET("/sea_routes/add", handler.SeaRouteAddHandler)
+	router.GET("/sea_routes/catalog", handler.SeaRouteCatalogHandler)
 
 	err := router.Run()
 

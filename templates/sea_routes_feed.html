@@ -12,7 +12,7 @@
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/styles/style.css">
+    <link rel="stylesheet" href="/static/styles/sea_routes.css">
 </head>
 
 <body>
@@ -20,45 +20,68 @@
 <main class="phone feed-page">
 
     <video
-        class="feed-video"
+    class="feed-video"
+    autoplay
+    loop
+    playsinline
+    poster="{{ .seaRoute.ImageURL }}">
+
+    {{ if .seaRoute.VideoURL }}
+    <source
         src="{{ .seaRoute.VideoURL }}"
-        poster="{{ .seaRoute.ImageURL }}"
-        autoplay
-        muted
-        loop
-        playsinline>
+        type="video/mp4">
+    {{ end }}
+
     </video>
 
     <header class="feed-header">
         Морские маршруты
     </header>
 
-    <div class="feed-actions">
+    <aside class="feed-side-panel">
 
         <label class="like-control">
-
-            <input
-                class="like-checkbox"
-                type="checkbox">
+            <input class="like-checkbox" type="checkbox">
 
             <span class="heart-outline">♡</span>
             <span class="heart-filled">♥</span>
 
-            <span class="like-count">
+            <span class="side-value">
                 {{ .seaRoute.LikesCount }}
             </span>
-
         </label>
+
+        <div class="route-parameter">
+            <span class="parameter-icon">↔</span>
+
+            <span class="side-value">
+                {{ .seaRoute.DistanceNauticalMiles }}
+            </span>
+
+            <span class="side-unit">
+                мор. миль
+            </span>
+        </div>
+
+        <div class="route-parameter">
+            <span class="parameter-icon">◷</span>
+
+            <span class="side-value">
+                {{ .seaRoute.AveragePortDelayHours }}
+            </span>
+
+            <span class="side-unit">
+                ч
+            </span>
+        </div>
 
         <a
             class="next-route"
-            href="/sea-routes/feed?sea_route_id={{ .seaRoute.ID }}&next=true">
-
+            href="/sea_routes/feed?sea_route_id={{ .seaRoute.ID }}&next=true">
             ↓
-
         </a>
 
-    </div>
+    </aside>
 
     <section class="feed-info">
 
@@ -66,24 +89,17 @@
             {{ .seaRoute.DeparturePort }} → {{ .seaRoute.ArrivalPort }}
         </h1>
 
-        <div class="feed-properties">
-
-            <span>
-                {{ .seaRoute.DistanceNauticalMiles }} мор. миль
-            </span>
-
-            <span>
-                Средняя задержка:
-                {{ .seaRoute.AveragePortDelayHours }} ч
-            </span>
-
-        </div>
-
         <details class="route-description">
 
-            <summary></summary>
+            <summary>
+                <span class="description-preview">
+                    {{ .seaRoute.Description }}
+                </span>
 
-            <p>
+                <span class="description-toggle"></span>
+            </summary>
+
+            <p class="description-full">
                 {{ .seaRoute.Description }}
             </p>
 
@@ -93,31 +109,19 @@
 
     <nav class="bottom-nav">
 
-        <a
-            href="/sea-routes/feed"
-            class="nav-item active">
-
+        <a href="/sea_routes/feed" class="nav-item active">
             <span class="nav-icon">⌂</span>
             <span>Лента</span>
-
         </a>
 
-        <a
-            href="/sea-routes/add"
-            class="nav-item">
-
+        <a href="/sea_routes/add" class="nav-item">
             <span class="nav-icon">＋</span>
             <span>Добавить</span>
-
         </a>
 
-        <a
-            href="/sea-routes/catalog"
-            class="nav-item">
-
+        <a href="/sea_routes/catalog" class="nav-item">
             <span class="nav-icon">▦</span>
             <span>Каталог</span>
-
         </a>
 
     </nav>

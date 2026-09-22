@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"sea_delivery/internal/api"
+	"sea_routes/internal/api"
 )
 
 func main() {
