@@ -624,3 +624,85 @@ body {
     font-size: 10px;
     font-weight: 500;
 }
+
+/* =========================================================
+   ЛР2 — КНОПКИ ФОРМЫ ДОБАВЛЕНИЯ
+   ========================================================= */
+
+.route-form > button[type="submit"] {
+    width: 100%;
+    height: 48px;
+
+    padding: 0;
+
+    border: none;
+
+    background: var(--orange);
+    color: var(--white);
+
+    font-family: "Montserrat", Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+.route-form > button[type="submit"]:hover {
+    filter: brightness(0.95);
+}
+
+
+/* =========================================================
+   ЛР2 — КАТАЛОГ: ССЫЛКА ВНУТРИ КАРТОЧКИ
+   ========================================================= */
+
+.route-card-link {
+    display: block;
+
+    color: inherit;
+    text-decoration: none;
+}
+
+.route-card-link:hover,
+.route-card-link:visited,
+.route-card-link:active {
+    color: inherit;
+    text-decoration: none;
+}
+
+
+/* =========================================================
+   ЛР2 — КАТАЛОГ: ЛОГИЧЕСКОЕ УДАЛЕНИЕ
+   ========================================================= */
+
+.delete-form {
+    width: 100%;
+
+    padding: 0 9px 9px;
+
+    margin: 0;
+}
+
+.delete-button {
+    width: 100%;
+    height: 34px;
+
+    border: 1px solid var(--orange);
+
+    background: var(--white);
+    color: var(--orange);
+
+    font-family: "Montserrat", Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background: var(--orange);
+    color: var(--white);
+}

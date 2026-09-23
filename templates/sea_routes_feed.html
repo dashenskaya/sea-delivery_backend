@@ -2,57 +2,106 @@
 <html lang="ru">
 
 <head>
+
     <meta charset="UTF-8">
+
     <title>Лента морских маршрутов</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/styles/sea_routes.css">
+    <link
+        rel="stylesheet"
+        href="/static/styles/sea_routes.css">
+
 </head>
+
 
 <body>
 
+
 <main class="phone feed-page">
 
-    <video
-    class="feed-video"
-    autoplay
-    loop
-    playsinline
-    poster="{{ .seaRoute.ImageURL }}">
 
-    {{ if .seaRoute.VideoURL }}
-    <source
-        src="{{ .seaRoute.VideoURL }}"
-        type="video/mp4">
-    {{ end }}
+    <!-- Видео маршрута -->
+
+    <video
+        class="feed-video"
+        autoplay
+        loop
+        muted
+        playsinline
+
+        {{ if .seaRoute.ImageURL }}
+
+        poster="{{ .seaRoute.ImageURL }}"
+
+        {{ else }}
+
+        poster="/static/media/default-route.jpg"
+
+        {{ end }}>
+
+
+        {{ if .seaRoute.VideoURL }}
+
+        <source
+            src="{{ .seaRoute.VideoURL }}"
+            type="video/mp4">
+
+        {{ else }}
+
+        <source
+            src="/static/media/default-route.mp4"
+            type="video/mp4">
+
+        {{ end }}
 
     </video>
+
+
+    <!-- Верхняя плашка -->
 
     <header class="feed-header">
         Морские маршруты
     </header>
 
+
+    <!-- Правая панель -->
+
     <aside class="feed-side-panel">
 
-        <label class="like-control">
-            <input class="like-checkbox" type="checkbox">
 
-            <span class="heart-outline">♡</span>
-            <span class="heart-filled">♥</span>
+        <!-- Лайки -->
+
+        <div class="like-control">
+
+            <span class="heart-outline">
+                ♡
+            </span>
 
             <span class="side-value">
                 {{ .seaRoute.LikesCount }}
             </span>
-        </label>
+
+        </div>
+
+
+        <!-- Расстояние -->
 
         <div class="route-parameter">
-            <span class="parameter-icon">↔</span>
+
+            <span class="parameter-icon">
+                ↔
+            </span>
 
             <span class="side-value">
                 {{ .seaRoute.DistanceNauticalMiles }}
@@ -61,10 +110,17 @@
             <span class="side-unit">
                 мор. миль
             </span>
+
         </div>
 
+
+        <!-- Задержка -->
+
         <div class="route-parameter">
-            <span class="parameter-icon">◷</span>
+
+            <span class="parameter-icon">
+                ◷
+            </span>
 
             <span class="side-value">
                 {{ .seaRoute.AveragePortDelayHours }}
@@ -73,31 +129,50 @@
             <span class="side-unit">
                 ч
             </span>
+
         </div>
+
+
+        <!-- Следующий маршрут -->
 
         <a
             class="next-route"
             href="/sea_routes/feed?sea_route_id={{ .seaRoute.ID }}&next=true">
+
             ↓
+
         </a>
 
     </aside>
 
+
+    <!-- Нижняя информация -->
+
     <section class="feed-info">
 
+
+        <!-- Название -->
+
         <h1 class="feed-title">
-            {{ .seaRoute.DeparturePort }} → {{ .seaRoute.ArrivalPort }}
+            {{ .seaRoute.Name }}
         </h1>
+
+
+        <!-- Описание -->
 
         <details class="route-description">
 
             <summary>
+
                 <span class="description-preview">
                     {{ .seaRoute.Description }}
                 </span>
 
-                <span class="description-toggle"></span>
+                <span class="description-toggle">
+                </span>
+
             </summary>
+
 
             <p class="description-full">
                 {{ .seaRoute.Description }}
@@ -107,26 +182,61 @@
 
     </section>
 
+
+    <!-- Нижнее меню -->
+
     <nav class="bottom-nav">
 
-        <a href="/sea_routes/feed" class="nav-item active">
-            <span class="nav-icon">⌂</span>
-            <span>Лента</span>
+
+        <a
+            href="/sea_routes/feed"
+            class="nav-item active">
+
+            <span class="nav-icon">
+                ⌂
+            </span>
+
+            <span>
+                Лента
+            </span>
+
         </a>
 
-        <a href="/sea_routes/add" class="nav-item">
-            <span class="nav-icon">＋</span>
-            <span>Добавить</span>
+
+        <a
+            href="/sea_routes/add"
+            class="nav-item">
+
+            <span class="nav-icon">
+                ＋
+            </span>
+
+            <span>
+                Добавить
+            </span>
+
         </a>
 
-        <a href="/sea_routes/catalog" class="nav-item">
-            <span class="nav-icon">▦</span>
-            <span>Каталог</span>
+
+        <a
+            href="/sea_routes/catalog"
+            class="nav-item">
+
+            <span class="nav-icon">
+                ▦
+            </span>
+
+            <span>
+                Каталог
+            </span>
+
         </a>
 
     </nav>
 
 </main>
 
+
 </body>
+
 </html>

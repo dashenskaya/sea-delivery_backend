@@ -1,138 +1,330 @@
 package repository
 
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"sea_routes/internal/app/ds"
+)
+
 const (
 	SeaRouteStatusDraft     = "черновик"
 	SeaRouteStatusPublished = "опубликован"
 	SeaRouteStatusDeleted   = "удален"
 )
 
-type SeaRoute struct {
-	ID int
-
-	DeparturePort string
-	ArrivalPort   string
-
-	DistanceNauticalMiles int
-	AveragePortDelayHours int
-
-	Description string
-
-	ImageURL string
-	VideoURL string
-
-	Status string
-
-	LikedUserIDs []int
-	LikesCount   int
+type Repository struct {
+	db *gorm.DB
 }
 
-var SeaRoutes = []SeaRoute{
-	{
-		ID:                    1,
-		DeparturePort:         "Шанхай",
-		ArrivalPort:           "Роттердам",
-		DistanceNauticalMiles: 10664,
-		AveragePortDelayHours: 156,
-		Description:           "Морской контейнерный маршрут из Китая в Нидерланды через крупнейшие торговые пути между Азией и Европой.",
-		ImageURL:              "http://localhost:9000/sea-routes/shanghai-rotterdam.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/shanghai-rotterdam.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{1, 3, 5, 8, 12},
-	},
-	{
-		ID:                    2,
-		DeparturePort:         "Гданьск",
-		ArrivalPort:           "Нью-Йорк",
-		DistanceNauticalMiles: 4315,
-		AveragePortDelayHours: 233,
-		Description:           "Морской контейнерный маршрут из Польши в США через Атлантический океан.",
-		ImageURL:              "http://localhost:9000/sea-routes/gdansk-new-york.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/gdansk-new-york.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{2, 7},
-	},
-	{
-		ID:                    3,
-		DeparturePort:         "Сингапур",
-		ArrivalPort:           "Гамбург",
-		DistanceNauticalMiles: 12298,
-		AveragePortDelayHours: 163,
-		Description:           "Морской контейнерный маршрут из Сингапура в Германию, соединяющий Юго-Восточную Азию с Северной Европой.",
-		ImageURL:              "http://localhost:9000/sea-routes/singapore-hamburg.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/singapore-hamburg.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{1, 2, 3, 5, 7, 9, 11, 15},
-	},
-	{
-		ID:                    4,
-		DeparturePort:         "Дубай",
-		ArrivalPort:           "Мумбаи",
-		DistanceNauticalMiles: 1329,
-		AveragePortDelayHours: 237,
-		Description:           "Морской контейнерный маршрут между портом Джебель-Али в Дубае и портом Нава-Шева в районе Мумбаи.",
-		ImageURL:              "http://localhost:9000/sea-routes/dubai-mumbai.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/dubai-mumbai.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{4, 6, 8, 10, 12},
-	},
-	{
-		ID:                    5,
-		DeparturePort:         "Пусан",
-		ArrivalPort:           "Ванкувер",
-		DistanceNauticalMiles: 4672,
-		AveragePortDelayHours: 182,
-		Description:           "Транстихоокеанский контейнерный маршрут из Южной Кореи в Канаду.",
-		ImageURL:              "http://localhost:9000/sea-routes/busan-vancouver.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/busan-vancouver.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{2, 4, 6, 9},
-	},
-	{
-		ID:                    6,
-		DeparturePort:         "Сантус",
-		ArrivalPort:           "Кейптаун",
-		DistanceNauticalMiles: 15106,
-		AveragePortDelayHours: 144,
-		Description:           "Морской контейнерный маршрут между Бразилией и Южной Африкой через Атлантический океан.",
-		ImageURL:              "http://localhost:9000/sea-routes/santos-capetown.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/santos-capetown.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{1, 5, 7},
-	},
-	{
-		ID:                    7,
-		DeparturePort:         "Токио",
-		ArrivalPort:           "Лос-Анджелес",
-		DistanceNauticalMiles: 4943,
-		AveragePortDelayHours: 208,
-		Description:           "Прямой транстихоокеанский контейнерный маршрут из Японии на западное побережье США.",
-		ImageURL:              "http://localhost:9000/sea-routes/tokyo-los-angeles.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/tokyo-los-angeles.mp4",
-		Status:                SeaRouteStatusPublished,
-		LikedUserIDs:          []int{3, 5, 8, 10, 13, 16},
-	},
-	{
-		ID:                    8,
-		DeparturePort:         "Антверпен",
-		ArrivalPort:           "Саванна",
-		DistanceNauticalMiles: 4467,
-		AveragePortDelayHours: 216,
-		Description:           "Морской контейнерный маршрут из Антверпена в Саванну через Атлантический океан.",
-		ImageURL:              "http://localhost:9000/sea-routes/antwerp-savannah.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/antwerp-savannah.mp4",
+func New(dsn string) (*Repository, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Repository{
+		db: db,
+	}, nil
+}
+
+// Подсчет лайков одного маршрута.
+func (r *Repository) addLikesCount(seaRoute *ds.SeaRoute) error {
+	var count int64
+
+	err := r.db.
+		Model(&ds.SeaRouteLike{}).
+		Where("sea_route_id = ?", seaRoute.ID).
+		Count(&count).
+		Error
+
+	if err != nil {
+		return err
+	}
+
+	seaRoute.LikesCount = count
+
+	return nil
+}
+
+// Подсчет лайков списка маршрутов.
+func (r *Repository) addLikesCounts(seaRoutes []ds.SeaRoute) error {
+	for i := range seaRoutes {
+		if err := r.addLikesCount(&seaRoutes[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Первый опубликованный маршрут.
+func (r *Repository) GetFirstPublishedSeaRoute() (*ds.SeaRoute, error) {
+	var seaRoute ds.SeaRoute
+
+	err := r.db.
+		Where("sea_route_status = ?", SeaRouteStatusPublished).
+		Order("sea_route_id ASC").
+		First(&seaRoute).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.addLikesCount(&seaRoute); err != nil {
+		return nil, err
+	}
+
+	return &seaRoute, nil
+}
+
+// Опубликованный маршрут по ID.
+func (r *Repository) GetPublishedSeaRouteByID(
+	id uint,
+) (*ds.SeaRoute, error) {
+
+	var seaRoute ds.SeaRoute
+
+	err := r.db.
+		Where(
+			"sea_route_id = ? AND sea_route_status = ?",
+			id,
+			SeaRouteStatusPublished,
+		).
+		First(&seaRoute).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.addLikesCount(&seaRoute); err != nil {
+		return nil, err
+	}
+
+	return &seaRoute, nil
+}
+
+// Следующий опубликованный маршрут.
+func (r *Repository) GetNextPublishedSeaRoute(
+	currentID uint,
+) (*ds.SeaRoute, error) {
+
+	var seaRoute ds.SeaRoute
+
+	err := r.db.
+		Where(
+			"sea_route_status = ? AND sea_route_id > ?",
+			SeaRouteStatusPublished,
+			currentID,
+		).
+		Order("sea_route_id ASC").
+		First(&seaRoute).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.addLikesCount(&seaRoute); err != nil {
+		return nil, err
+	}
+
+	return &seaRoute, nil
+}
+
+// Каталог с фильтрацией по расстоянию.
+func (r *Repository) GetPublishedSeaRoutesByDistance(
+	minDistance int,
+	maxDistance int,
+) ([]ds.SeaRoute, error) {
+
+	var seaRoutes []ds.SeaRoute
+
+	err := r.db.
+		Where(
+			`sea_route_status = ?
+			AND sea_route_distance_nautical_miles >= ?
+			AND sea_route_distance_nautical_miles <= ?`,
+			SeaRouteStatusPublished,
+			minDistance,
+			maxDistance,
+		).
+		Order("sea_route_id ASC").
+		Find(&seaRoutes).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.addLikesCounts(seaRoutes); err != nil {
+		return nil, err
+	}
+
+	return seaRoutes, nil
+}
+
+// Получить черновик пользователя.
+func (r *Repository) GetDraftByUser(
+	userID uint,
+) (*ds.SeaRoute, error) {
+
+	var seaRoute ds.SeaRoute
+
+	err := r.db.
+		Where(
+			"sea_route_creator_id = ? AND sea_route_status = ?",
+			userID,
+			SeaRouteStatusDraft,
+		).
+		First(&seaRoute).
+		Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &seaRoute, nil
+}
+
+// Создание черновика через ORM.
+func (r *Repository) CreateDraft(
+	userID uint,
+	name string,
+) (*ds.SeaRoute, error) {
+
+	existingDraft, err := r.GetDraftByUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if existingDraft != nil {
+		return existingDraft, nil
+	}
+
+	seaRoute := ds.SeaRoute{
+		Name:                  name,
+		DeparturePort:         "",
+		ArrivalPort:           "",
+		DistanceNauticalMiles: 0,
+		AveragePortDelayHours: 0,
+		Description:           "",
+		ImageURL:              "",
+		VideoURL:              "",
 		Status:                SeaRouteStatusDraft,
-		LikedUserIDs:          []int{},
-	},
-	{
-		ID:                    9,
-		DeparturePort:         "Барселона",
-		ArrivalPort:           "Александрия",
-		DistanceNauticalMiles: 2406,
-		AveragePortDelayHours: 407,
-		Description:           "Средиземноморский контейнерный маршрут из Испании в Египет.",
-		ImageURL:              "http://localhost:9000/sea-routes/barcelona-alexandria.jpg",
-		VideoURL:              "http://localhost:9000/sea-routes/barcelona-alexandria.mp4",
-		Status:                SeaRouteStatusDeleted,
-		LikedUserIDs:          []int{3, 6},
-	},
+		CreatorID:             userID,
+	}
+
+	err = r.db.Create(&seaRoute).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &seaRoute, nil
+}
+
+// Публикация черновика через ORM.
+func (r *Repository) PublishDraft(
+	userID uint,
+	distanceNauticalMiles int,
+	averagePortDelayHours int,
+	description string,
+) (*ds.SeaRoute, error) {
+
+	draft, err := r.GetDraftByUser(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if draft == nil {
+		return nil, fmt.Errorf("черновик морского маршрута не найден")
+	}
+
+	formedAt := time.Now()
+
+	err = r.db.
+		Model(&ds.SeaRoute{}).
+		Where(
+			"sea_route_id = ? AND sea_route_status = ?",
+			draft.ID,
+			SeaRouteStatusDraft,
+		).
+		Updates(map[string]interface{}{
+			"sea_route_distance_nautical_miles":  distanceNauticalMiles,
+			"sea_route_average_port_delay_hours": averagePortDelayHours,
+			"sea_route_description":              description,
+			"sea_route_status":                   SeaRouteStatusPublished,
+			"sea_route_formed_at":                formedAt,
+		}).
+		Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetPublishedSeaRouteByID(draft.ID)
+}
+
+// Логическое удаление через чистый SQL UPDATE.
+func (r *Repository) DeleteSeaRoute(
+	ctx context.Context,
+	seaRouteID uint,
+) error {
+
+	sqlDB, err := r.db.DB()
+	if err != nil {
+		return err
+	}
+
+	result, err := sqlDB.ExecContext(
+		ctx,
+		`
+		UPDATE sea_routes
+		SET sea_route_status = $1
+		WHERE sea_route_id = $2
+		`,
+		SeaRouteStatusDeleted,
+		seaRouteID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf(
+			"морской маршрут с id %d не найден",
+			seaRouteID,
+		)
+	}
+
+	return nil
 }

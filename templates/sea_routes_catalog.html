@@ -3,16 +3,25 @@
 
 <head>
     <meta charset="UTF-8">
+
     <title>Каталог морских маршрутов</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com">
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/styles/sea_routes.css">
+    <link
+        rel="stylesheet"
+        href="/static/styles/sea_routes.css">
 </head>
 
 <body>
@@ -28,6 +37,8 @@
         <h1 class="page-title">
             Каталог маршрутов
         </h1>
+
+        <!-- Фильтр -->
 
         <form
             class="range-filter"
@@ -80,60 +91,99 @@
 
         </form>
 
+
+        <!-- Карточки -->
+
         <div class="route-grid">
 
             {{ range .seaRoutes }}
 
-            <a
-                class="route-card"
-                href="/sea_routes/feed?sea_route_id={{ .ID }}"
-                data-image-url="{{ .ImageURL }}"
-                data-video-url="{{ .VideoURL }}">
+            <article class="route-card">
 
-                <img
-                    class="route-card-image"
-                    src="{{ .ImageURL }}"
-                    alt="{{ .DeparturePort }} — {{ .ArrivalPort }}">
+                <!-- Переход в ленту -->
 
-                <div class="route-card-content">
+                <a
+                    class="route-card-link"
+                    href="/sea_routes/feed?sea_route_id={{ .ID }}">
 
-                    <div class="route-card-heading">
+                    {{ if .ImageURL }}
 
-                        <div>
+                    <img
+                        class="route-card-image"
+                        src="{{ .ImageURL }}"
+                        alt="{{ .Name }}">
 
-                            <h2>
-                                {{ .DeparturePort }}
-                            </h2>
+                    {{ else }}
 
-                            <p class="route-destination">
-                                → {{ .ArrivalPort }}
-                            </p>
+                    <img
+                        class="route-card-image"
+                        src="/static/media/default-route.jpg"
+                        alt="{{ .Name }}">
+
+                    {{ end }}
+
+                    <div class="route-card-content">
+
+                        <div class="route-card-heading">
+
+                            <div>
+
+                                <h2>
+                                    {{ .Name }}
+                                </h2>
+
+                            </div>
+
+                            <div class="card-like">
+
+                                <span>
+                                    ♡
+                                </span>
+
+                                <small>
+                                    {{ .LikesCount }}
+                                </small>
+
+                            </div>
 
                         </div>
 
-                        <div class="card-like">
+                        <p class="route-distance">
+                            {{ .DistanceNauticalMiles }} мор. миль
+                        </p>
 
-                            <span>♡</span>
-
-                            <small>
-                                {{ .LikesCount }}
-                            </small>
-
-                        </div>
+                        <span class="route-more">
+                            Подробнее →
+                        </span>
 
                     </div>
 
-                    <p class="route-distance">
-                        {{ .DistanceNauticalMiles }} мор. миль
-                    </p>
+                </a>
 
-                    <span class="route-more">
-                        Подробнее →
-                    </span>
 
-                </div>
+                <!-- Логическое удаление -->
 
-            </a>
+                <form
+                    class="delete-form"
+                    method="POST"
+                    action="/sea_routes/delete">
+
+                    <input
+                        type="hidden"
+                        name="sea_route_id"
+                        value="{{ .ID }}">
+
+                    <button
+                        class="delete-button"
+                        type="submit">
+
+                        Удалить
+
+                    </button>
+
+                </form>
+
+            </article>
 
             {{ end }}
 
@@ -141,21 +191,49 @@
 
     </section>
 
+
     <nav class="bottom-nav">
 
-        <a href="/sea_routes/feed" class="nav-item">
-            <span class="nav-icon">⌂</span>
-            <span>Лента</span>
+        <a
+            href="/sea_routes/feed"
+            class="nav-item">
+
+            <span class="nav-icon">
+                ⌂
+            </span>
+
+            <span>
+                Лента
+            </span>
+
         </a>
 
-        <a href="/sea_routes/add" class="nav-item">
-            <span class="nav-icon">＋</span>
-            <span>Добавить</span>
+        <a
+            href="/sea_routes/add"
+            class="nav-item">
+
+            <span class="nav-icon">
+                ＋
+            </span>
+
+            <span>
+                Добавить
+            </span>
+
         </a>
 
-        <a href="/sea_routes/catalog" class="nav-item active">
-            <span class="nav-icon">▦</span>
-            <span>Каталог</span>
+        <a
+            href="/sea_routes/catalog"
+            class="nav-item active">
+
+            <span class="nav-icon">
+                ▦
+            </span>
+
+            <span>
+                Каталог
+            </span>
+
         </a>
 
     </nav>
@@ -163,4 +241,5 @@
 </main>
 
 </body>
+
 </html>
