@@ -38,7 +38,8 @@
             Каталог маршрутов
         </h1>
 
-        <!-- Фильтр -->
+
+        <!-- Фильтр по расстоянию -->
 
         <form
             class="range-filter"
@@ -58,6 +59,7 @@
                     </span>
 
                 </div>
+
 
                 <div class="double-range">
 
@@ -83,16 +85,19 @@
 
             </div>
 
+
             <button
                 class="filter-button"
                 type="submit">
+
                 найти
+
             </button>
 
         </form>
 
 
-        <!-- Карточки -->
+        <!-- Карточки маршрутов -->
 
         <div class="route-grid">
 
@@ -100,29 +105,21 @@
 
             <article class="route-card">
 
+
                 <!-- Переход в ленту -->
 
                 <a
                     class="route-card-link"
                     href="/sea_routes/feed?sea_route_id={{ .ID }}">
 
-                    {{ if .ImageURL }}
-
                     <img
                         class="route-card-image"
                         src="{{ .ImageURL }}"
                         alt="{{ .Name }}">
 
-                    {{ else }}
-
-                    <img
-                        class="route-card-image"
-                        src="/static/media/default-route.jpg"
-                        alt="{{ .Name }}">
-
-                    {{ end }}
 
                     <div class="route-card-content">
+
 
                         <div class="route-card-heading">
 
@@ -133,6 +130,9 @@
                                 </h2>
 
                             </div>
+
+
+                            <!-- Число лайков -->
 
                             <div class="card-like">
 
@@ -148,9 +148,23 @@
 
                         </div>
 
+
+                        <!-- Расстояние -->
+
                         <p class="route-distance">
-                            {{ .DistanceNauticalMiles }} мор. миль
+
+                            {{ if .DistanceNauticalMiles }}
+
+                                {{ .DistanceNauticalMiles }} мор. миль
+
+                            {{ else }}
+
+                                Расстояние не указано
+
+                            {{ end }}
+
                         </p>
+
 
                         <span class="route-more">
                             Подробнее →
@@ -173,6 +187,7 @@
                         name="sea_route_id"
                         value="{{ .ID }}">
 
+
                     <button
                         class="delete-button"
                         type="submit">
@@ -192,6 +207,8 @@
     </section>
 
 
+    <!-- Нижнее меню -->
+
     <nav class="bottom-nav">
 
         <a
@@ -208,6 +225,7 @@
 
         </a>
 
+
         <a
             href="/sea_routes/add"
             class="nav-item">
@@ -221,6 +239,7 @@
             </span>
 
         </a>
+
 
         <a
             href="/sea_routes/catalog"

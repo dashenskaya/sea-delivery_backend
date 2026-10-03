@@ -2,7 +2,6 @@
 <html lang="ru">
 
 <head>
-
     <meta charset="UTF-8">
 
     <title>Добавление морского маршрута</title>
@@ -23,15 +22,11 @@
     <link
         rel="stylesheet"
         href="/static/styles/sea_routes.css">
-
 </head>
-
 
 <body>
 
-
 <main class="phone standard-page">
-
 
     <header class="page-header">
         Морские маршруты
@@ -44,7 +39,7 @@
         {{ if .hasDraft }}
 
 
-        <!-- ЭТАП 2 -->
+        <!-- ЭТАП 2: публикация существующего черновика -->
 
         <h1 class="page-title">
             Публикация маршрута
@@ -77,10 +72,10 @@
                     class="media-video-preview"
                     muted
                     controls
-                    poster="/static/media/default-route.jpg">
+                    poster="{{ .seaRoute.ImageURL }}">
 
                     <source
-                        src="/static/media/default-route.mp4"
+                        src="{{ .seaRoute.VideoURL }}"
                         type="video/mp4">
 
                 </video>
@@ -98,8 +93,8 @@
 
                 <img
                     class="media-photo-preview"
-                    src="/static/media/default-route.jpg"
-                    alt="Фото морского маршрута">
+                    src="{{ .seaRoute.ImageURL }}"
+                    alt="{{ .seaRoute.Name }}">
 
             </div>
 
@@ -117,13 +112,13 @@
                     name="distance_nautical_miles"
                     type="number"
                     min="0"
-                    value="{{ .seaRoute.DistanceNauticalMiles }}"
+                    value="{{ with .seaRoute.DistanceNauticalMiles }}{{ . }}{{ end }}"
                     required>
 
             </div>
 
 
-            <!-- Задержка -->
+            <!-- Средняя задержка -->
 
             <div class="form-group">
 
@@ -136,13 +131,13 @@
                     name="average_port_delay_hours"
                     type="number"
                     min="0"
-                    value="{{ .seaRoute.AveragePortDelayHours }}"
+                    value="{{ with .seaRoute.AveragePortDelayHours }}{{ . }}{{ end }}"
                     required>
 
             </div>
 
 
-            <!-- Описание -->
+            <!-- Краткое описание -->
 
             <div class="form-group">
 
@@ -154,7 +149,7 @@
                     id="description"
                     name="description"
                     rows="3"
-                    required>{{ .seaRoute.Description }}</textarea>
+                    required>{{ with .seaRoute.Description }}{{ . }}{{ end }}</textarea>
 
             </div>
 
@@ -164,14 +159,13 @@
                 Опубликовать
             </button>
 
-
         </form>
 
 
         {{ else }}
 
 
-        <!-- ЭТАП 1 -->
+        <!-- ЭТАП 1: создание черновика -->
 
         <h1 class="page-title">
             Новый маршрут
@@ -200,6 +194,10 @@
                     controls>
                 </video>
 
+                <!--
+                    В ЛР2 пользователь выбирает файл,
+                    но сам файл на сервер ещё не отправляется.
+                -->
 
                 <input
                     class="media-file-input-visible"
@@ -218,12 +216,10 @@
                     Фото
                 </label>
 
-
                 <img
                     class="media-photo-preview"
                     src="/static/media/default-route.jpg"
                     alt="Фото морского маршрута">
-
 
                 <input
                     class="media-file-input-visible"
@@ -253,11 +249,9 @@
 
 
             <button
-                type="submit"
-                >
+                type="submit">
                 Далее
             </button>
-
 
         </form>
 
@@ -268,8 +262,9 @@
     </section>
 
 
-    <nav class="bottom-nav">
+    <!-- Нижнее меню -->
 
+    <nav class="bottom-nav">
 
         <a
             href="/sea_routes/feed"
@@ -315,12 +310,9 @@
 
         </a>
 
-
     </nav>
 
-
 </main>
-
 
 </body>
 

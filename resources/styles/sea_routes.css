@@ -674,35 +674,37 @@ body {
 }
 
 
-/* =========================================================
-   ЛР2 — КАТАЛОГ: ЛОГИЧЕСКОЕ УДАЛЕНИЕ
-   ========================================================= */
+/* ПРАВКА ЛР2 — ЕДИНЫЙ СТИЛЬ КНОПКИ УДАЛИТЬ */
 
 .delete-form {
-    width: 100%;
-
-    padding: 0 9px 9px;
-
-    margin: 0;
+    padding: 0 14px 14px;
 }
 
 .delete-button {
     width: 100%;
-    height: 34px;
+    height: 36px;
 
-    border: 1px solid var(--orange);
+    border: none;
+    border-radius: 0;
 
-    background: var(--white);
-    color: var(--orange);
+    background: var(--orange);
+    color: #ffffff;
 
-    font-family: "Montserrat", Arial, sans-serif;
-    font-size: 11px;
+    font-family: inherit;
+    font-size: 12px;
     font-weight: 600;
 
     cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
 }
 
 .delete-button:hover {
-    background: var(--orange);
-    color: var(--white);
+    background: #e98500;
+}
+
+.delete-button:active {
+    transform: scale(0.98);
 }
