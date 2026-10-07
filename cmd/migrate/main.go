@@ -1,48 +1,74 @@
 package main
 
 import (
-	"sea_routes/internal/app/ds"
-	"sea_routes/internal/app/dsn"
+	"log"
+	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+
+	"sea_routes/internal/api"
+	"sea_routes/internal/app/dsn"
+	"sea_routes/internal/app/repository"
 )
 
 func main() {
-	_ = godotenv.Load()
+	log.Println("Application start!")
 
-	db, err :=
-		gorm.Open(
-			postgres.Open(dsn.FromEnv()),
-			&gorm.Config{},
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal(
+			"Не удалось загрузить .env: ",
+			err,
+		)
+	}
+
+	minioUseSSL, err :=
+		strconv.ParseBool(
+			os.Getenv("MINIO_USE_SSL"),
 		)
 
 	if err != nil {
-		panic("failed to connect database")
+		log.Fatal(
+			"Некорректное значение MINIO_USE_SSL: ",
+			err,
+		)
 	}
 
-	err =
-		db.AutoMigrate(
-			&ds.SeaRouteUser{},
-			&ds.SeaRoute{},
-			&ds.SeaRouteLike{},
+	rep, err :=
+		repository.New(
+			repository.RepositorySettings{
+				PostgresDSN: dsn.FromEnv(),
+
+				MinioEndpoint: os.Getenv(
+					"MINIO_ENDPOINT",
+				),
+
+				MinioAccessKey: os.Getenv(
+					"MINIO_ACCESS_KEY",
+				),
+
+				MinioSecretKey: os.Getenv(
+					"MINIO_SECRET_KEY",
+				),
+
+				MinioBucket: os.Getenv(
+					"MINIO_BUCKET",
+				),
+
+				MinioUseSSL: minioUseSSL,
+			},
 		)
 
 	if err != nil {
-		panic("cant migrate db")
+		log.Fatal(
+			"Не удалось инициализировать Repository: ",
+			err,
+		)
 	}
 
-	// Один пользователь может иметь
-	// только один черновик.
-	err =
-		db.Exec(`
-			CREATE UNIQUE INDEX IF NOT EXISTS idx_one_draft_per_user
-			ON sea_routes (sea_route_creator_id)
-			WHERE sea_route_status = 'черновик'
-		`).Error
+	api.StartServer(rep)
 
-	if err != nil {
-		panic("cant create draft index")
-	}
+	log.Println("Application terminated!")
 }

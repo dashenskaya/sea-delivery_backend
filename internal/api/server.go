@@ -23,6 +23,59 @@ func StartServer(rep *repository.Repository) {
 
 	hand := handler.NewHandler(rep)
 
+	apiGroup :=
+		router.Group("/api")
+
+	apiGroup.GET(
+		"/sea-routes",
+		hand.GetSeaRoutesAPI,
+	)
+
+	apiGroup.POST(
+		"/sea-routes",
+		hand.CreateSeaRouteAPI,
+	)
+
+	apiGroup.GET(
+		"/sea-routes/draft",
+		hand.GetDraftAPI,
+	)
+
+	apiGroup.PUT(
+		"/sea-routes/draft",
+		hand.PublishSeaRouteAPI,
+	)
+
+	apiGroup.GET(
+		"/sea-routes/feed",
+		hand.GetSeaRouteFeedAPI,
+	)
+
+	apiGroup.POST(
+		"/sea-routes/:id/likes",
+		hand.SetSeaRouteLikeAPI,
+	)
+
+	apiGroup.DELETE(
+		"/sea-routes/:id",
+		hand.DeleteSeaRouteAPI,
+	)
+
+	apiGroup.POST(
+		"/users",
+		hand.RegisterUserAPI,
+	)
+
+	apiGroup.POST(
+		"/auth",
+		hand.AuthAPI,
+	)
+
+	apiGroup.POST(
+		"/logout",
+		hand.LogoutAPI,
+	)
+
 	router.GET(
 		"/sea_routes/feed",
 		hand.SeaRouteFeedHandler,

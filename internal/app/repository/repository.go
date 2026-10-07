@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -18,23 +20,85 @@ const (
 	SeaRouteStatusDeleted   = "удален"
 )
 
-type Repository struct {
-	db *gorm.DB
+type RepositorySettings struct {
+	PostgresDSN string
+
+	MinioEndpoint  string
+	MinioAccessKey string
+	MinioSecretKey string
+	MinioBucket    string
+	MinioUseSSL    bool
 }
 
-func New(dsn string) (*Repository, error) {
+type Repository struct {
+	db *gorm.DB
+
+	minio       *minio.Client
+	minioBucket string
+}
+
+func New(
+	settings RepositorySettings,
+) (*Repository, error) {
+
 	db, err :=
 		gorm.Open(
-			postgres.Open(dsn),
+			postgres.Open(settings.PostgresDSN),
 			&gorm.Config{},
 		)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(
+			"ошибка подключения к PostgreSQL: %w",
+			err,
+		)
+	}
+
+	minioClient, err :=
+		minio.New(
+			settings.MinioEndpoint,
+			&minio.Options{
+				Creds: credentials.NewStaticV4(
+					settings.MinioAccessKey,
+					settings.MinioSecretKey,
+					"",
+				),
+
+				Secure: settings.MinioUseSSL,
+			},
+		)
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"ошибка создания клиента MinIO: %w",
+			err,
+		)
+	}
+
+	exists, err :=
+		minioClient.BucketExists(
+			context.Background(),
+			settings.MinioBucket,
+		)
+
+	if err != nil {
+		return nil, fmt.Errorf(
+			"ошибка подключения к MinIO: %w",
+			err,
+		)
+	}
+
+	if !exists {
+		return nil, fmt.Errorf(
+			"бакет MinIO %q не найден",
+			settings.MinioBucket,
+		)
 	}
 
 	return &Repository{
-		db: db,
+		db:          db,
+		minio:       minioClient,
+		minioBucket: settings.MinioBucket,
 	}, nil
 }
 
@@ -376,10 +440,11 @@ func (r *Repository) PublishDraft(
 	)
 }
 
-// Логическое удаление через чистый SQL UPDATE.
+// Логическое удаление маршрута текущего пользователя.
 func (r *Repository) DeleteSeaRoute(
 	ctx context.Context,
 	seaRouteID uint,
+	userID uint,
 ) error {
 
 	sqlDB, err :=
@@ -396,9 +461,12 @@ func (r *Repository) DeleteSeaRoute(
 			UPDATE sea_routes
 			SET sea_route_status = $1
 			WHERE sea_route_id = $2
+			  AND sea_route_creator_id = $3
+			  AND sea_route_status <> $1
 			`,
 			SeaRouteStatusDeleted,
 			seaRouteID,
+			userID,
 		)
 
 	if err != nil {
@@ -414,10 +482,154 @@ func (r *Repository) DeleteSeaRoute(
 
 	if rowsAffected == 0 {
 		return fmt.Errorf(
-			"морской маршрут с id %d не найден",
-			seaRouteID,
+			"морской маршрут не найден или не принадлежит текущему пользователю",
 		)
 	}
 
 	return nil
+}
+
+// Сохранение имен изображения и видео в черновике.
+func (r *Repository) UpdateDraftMedia(
+	seaRouteID uint,
+	userID uint,
+	imageFileName string,
+	videoFileName string,
+) error {
+
+	result :=
+		r.db.
+			Model(&ds.SeaRoute{}).
+			Where(
+				`sea_route_id = ?
+				AND sea_route_creator_id = ?
+				AND sea_route_status = ?`,
+				seaRouteID,
+				userID,
+				SeaRouteStatusDraft,
+			).
+			Updates(
+				map[string]interface{}{
+					"sea_route_image_url": imageFileName,
+					"sea_route_video_url": videoFileName,
+				},
+			)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return fmt.Errorf(
+			"черновик морского маршрута не найден",
+		)
+	}
+
+	return nil
+}
+
+// Установка или отмена лайка текущего пользователя.
+// value = 1 — поставить лайк.
+// value = 0 — убрать лайк.
+func (r *Repository) SetSeaRouteLike(
+	userID uint,
+	seaRouteID uint,
+	value int,
+) (*ds.SeaRoute, error) {
+
+	// Лайкать можно только опубликованный маршрут.
+	seaRoute, err :=
+		r.GetPublishedSeaRouteByID(
+			seaRouteID,
+		)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if seaRoute == nil {
+		return nil,
+			fmt.Errorf(
+				"опубликованный морской маршрут не найден",
+			)
+	}
+
+	switch value {
+	case 1:
+		// FirstOrCreate не позволит повторно
+		// создать тот же лайк этого пользователя.
+		like := ds.SeaRouteLike{
+			UserID:     userID,
+			SeaRouteID: seaRouteID,
+		}
+
+		err =
+			r.db.
+				Where(
+					"sea_route_user_id = ? AND sea_route_id = ?",
+					userID,
+					seaRouteID,
+				).
+				FirstOrCreate(&like).
+				Error
+
+		if err != nil {
+			return nil, err
+		}
+
+	case 0:
+		err =
+			r.db.
+				Where(
+					"sea_route_user_id = ? AND sea_route_id = ?",
+					userID,
+					seaRouteID,
+				).
+				Delete(
+					&ds.SeaRouteLike{},
+				).
+				Error
+
+		if err != nil {
+			return nil, err
+		}
+
+	default:
+		return nil,
+			fmt.Errorf(
+				"значение лайка должно быть 0 или 1",
+			)
+	}
+
+	// Получаем маршрут заново,
+	// чтобы LikesCount пересчитался.
+	return r.GetPublishedSeaRouteByID(
+		seaRouteID,
+	)
+}
+
+// Проверка, поставил ли текущий пользователь лайк маршруту.
+func (r *Repository) IsSeaRouteLikedByUser(
+	userID uint,
+	seaRouteID uint,
+) (bool, error) {
+
+	var count int64
+
+	err :=
+		r.db.
+			Model(&ds.SeaRouteLike{}).
+			Where(
+				"sea_route_user_id = ? AND sea_route_id = ?",
+				userID,
+				seaRouteID,
+			).
+			Count(&count).
+			Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }

@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 
@@ -22,14 +24,46 @@ func main() {
 		)
 	}
 
-	rep, err :=
-		repository.New(
-			dsn.FromEnv(),
+	minioUseSSL, err :=
+		strconv.ParseBool(
+			os.Getenv("MINIO_USE_SSL"),
 		)
 
 	if err != nil {
 		log.Fatal(
-			"Не удалось подключиться к БД: ",
+			"Некорректное значение MINIO_USE_SSL: ",
+			err,
+		)
+	}
+
+	rep, err :=
+		repository.New(
+			repository.RepositorySettings{
+				PostgresDSN: dsn.FromEnv(),
+
+				MinioEndpoint: os.Getenv(
+					"MINIO_ENDPOINT",
+				),
+
+				MinioAccessKey: os.Getenv(
+					"MINIO_ACCESS_KEY",
+				),
+
+				MinioSecretKey: os.Getenv(
+					"MINIO_SECRET_KEY",
+				),
+
+				MinioBucket: os.Getenv(
+					"MINIO_BUCKET",
+				),
+
+				MinioUseSSL: minioUseSSL,
+			},
+		)
+
+	if err != nil {
+		log.Fatal(
+			"Не удалось инициализировать Repository: ",
 			err,
 		)
 	}

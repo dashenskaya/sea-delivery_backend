@@ -12,8 +12,6 @@ import (
 	"sea_routes/internal/app/repository"
 )
 
-const currentUserID uint = 1
-
 type Handler struct {
 	Repository *repository.Repository
 }
@@ -131,7 +129,7 @@ func (h *Handler) SeaRouteAddHandler(
 ) {
 	draft, err :=
 		h.Repository.
-			GetDraftByUser(currentUserID)
+			GetDraftByUser(CurrentUser().ID)
 
 	if err != nil {
 		ctx.String(
@@ -265,7 +263,7 @@ func (h *Handler) SeaRouteCreateHandler(
 
 	_, err :=
 		h.Repository.CreateDraft(
-			currentUserID,
+			CurrentUser().ID,
 			name,
 		)
 
@@ -334,7 +332,7 @@ func (h *Handler) SeaRoutePublishHandler(
 
 	seaRoute, err :=
 		h.Repository.PublishDraft(
-			currentUserID,
+			CurrentUser().ID,
 			distance,
 			delay,
 			description,
@@ -385,6 +383,7 @@ func (h *Handler) SeaRouteDeleteHandler(
 		h.Repository.DeleteSeaRoute(
 			ctx.Request.Context(),
 			uint(id),
+			CurrentUser().ID,
 		)
 
 	if err != nil {
