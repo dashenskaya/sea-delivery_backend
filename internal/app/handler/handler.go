@@ -129,7 +129,7 @@ func (h *Handler) SeaRouteAddHandler(
 ) {
 	draft, err :=
 		h.Repository.
-			GetDraftByUser(CurrentUser().ID)
+			GetDraftByUser(ctx.GetUint("user_id"))
 
 	if err != nil {
 		ctx.String(
@@ -263,7 +263,7 @@ func (h *Handler) SeaRouteCreateHandler(
 
 	_, err :=
 		h.Repository.CreateDraft(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			name,
 		)
 
@@ -332,7 +332,7 @@ func (h *Handler) SeaRoutePublishHandler(
 
 	seaRoute, err :=
 		h.Repository.PublishDraft(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			distance,
 			delay,
 			description,
@@ -383,7 +383,7 @@ func (h *Handler) SeaRouteDeleteHandler(
 		h.Repository.DeleteSeaRoute(
 			ctx.Request.Context(),
 			uint(id),
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	if err != nil {

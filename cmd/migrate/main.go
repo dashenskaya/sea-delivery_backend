@@ -7,7 +7,6 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"sea_routes/internal/api"
 	"sea_routes/internal/app/dsn"
 	"sea_routes/internal/app/repository"
 )
@@ -36,7 +35,7 @@ func main() {
 		)
 	}
 
-	rep, err :=
+	_, err =
 		repository.New(
 			repository.RepositorySettings{
 				PostgresDSN: dsn.FromEnv(),
@@ -67,8 +66,6 @@ func main() {
 			err,
 		)
 	}
-
-	api.StartServer(rep)
 
 	log.Println("Application terminated!")
 }

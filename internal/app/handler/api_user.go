@@ -17,6 +17,18 @@ type RegisterUserRequest struct {
 
 // POST /api/users
 // Регистрация нового пользователя.
+
+// RegisterUserAPI godoc
+// @Summary Регистрация пользователя
+// @Description Создание нового пользователя Sea Routes
+// @Tags Авторизация
+// @Accept json
+// @Produce json
+// @Param request body RegisterUserRequest true "Логин и пароль"
+// @Success 201 {object} serializer.User
+// @Failure 400
+// @Failure 409
+// @Router /users [post]
 func (h *Handler) RegisterUserAPI(
 	ctx *gin.Context,
 ) {
@@ -39,9 +51,7 @@ func (h *Handler) RegisterUserAPI(
 		)
 
 	password :=
-		strings.TrimSpace(
-			request.Password,
-		)
+		request.Password
 
 	if login == "" {
 		ctx.Status(
@@ -57,17 +67,11 @@ func (h *Handler) RegisterUserAPI(
 		return
 	}
 
-	if password == "" {
-		ctx.Status(
-			http.StatusBadRequest,
-		)
-		return
-	}
+	if strings.TrimSpace(password) == "" ||
+		len(password) < 8 ||
+		len(password) > 72 {
 
-	if len(password) > 100 {
-		ctx.Status(
-			http.StatusBadRequest,
-		)
+		ctx.Status(http.StatusBadRequest)
 		return
 	}
 

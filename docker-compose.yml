@@ -13,5 +13,18 @@ services:
       - minio-data:/data
     command: server /data --console-address ":9001"
 
+  
+  redis:
+    image: redis:7.4-alpine
+    container_name: sea_routes_redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - sea_routes_redis_data:/data
+
+
 volumes:
   minio-data:
+  sea_routes_redis_data:

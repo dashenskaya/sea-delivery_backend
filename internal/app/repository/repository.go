@@ -412,8 +412,9 @@ func (r *Repository) PublishDraft(
 		r.db.
 			Model(&ds.SeaRoute{}).
 			Where(
-				"sea_route_id = ? AND sea_route_status = ?",
+				"sea_route_id = ? AND sea_route_creator_id = ? AND sea_route_status = ?",
 				draft.ID,
+				userID,
 				SeaRouteStatusDraft,
 			).
 			Updates(

@@ -14,6 +14,18 @@ import (
 // GET /api/sea-routes
 // Список только опубликованных маршрутов
 // с фильтрацией по расстоянию.
+
+// GetSeaRoutesAPI godoc
+// @Summary Получение списка морских маршрутов
+// @Description Возвращает опубликованные маршруты с фильтрацией по расстоянию
+// @Tags Морские маршруты
+// @Produce json
+// @Param min_distance_nautical_miles query int false "Минимальное расстояние"
+// @Param max_distance_nautical_miles query int false "Максимальное расстояние"
+// @Success 200 {array} serializer.SeaRoute
+// @Failure 400
+// @Failure 500
+// @Router /sea-routes [get]
 func (h *Handler) GetSeaRoutesAPI(
 	ctx *gin.Context,
 ) {
@@ -82,7 +94,7 @@ func (h *Handler) GetSeaRoutesAPI(
 	response :=
 		serializer.FromSeaRoutes(
 			seaRoutes,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	ctx.JSON(
@@ -93,6 +105,23 @@ func (h *Handler) GetSeaRoutesAPI(
 
 // POST /api/sea-routes
 // Создание нового черновика с изображением и видео.
+
+// CreateSeaRouteAPI godoc
+// @Summary Создание черновика морского маршрута
+// @Description Создание маршрута с фотографией и видео
+// @Tags Морские маршруты
+// @Accept multipart/form-data
+// @Produce json
+// @Param name formData string true "Название маршрута"
+// @Param image formData file true "Фотография маршрута"
+// @Param video formData file true "Видео маршрута"
+// @Success 201 {object} serializer.SeaRoute
+// @Failure 400
+// @Failure 401
+// @Failure 409
+// @Failure 500
+// @Security BearerAuth
+// @Router /sea-routes [post]
 func (h *Handler) CreateSeaRouteAPI(
 	ctx *gin.Context,
 ) {
@@ -124,7 +153,7 @@ func (h *Handler) CreateSeaRouteAPI(
 	// может быть только один черновик.
 	existingDraft, err :=
 		h.Repository.GetDraftByUser(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	if err != nil {
@@ -193,7 +222,7 @@ func (h *Handler) CreateSeaRouteAPI(
 
 	draft, err :=
 		h.Repository.CreateDraft(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			name,
 		)
 
@@ -207,7 +236,7 @@ func (h *Handler) CreateSeaRouteAPI(
 	err =
 		h.Repository.UpdateDraftMedia(
 			draft.ID,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			imageFileName,
 			videoFileName,
 		)
@@ -221,7 +250,7 @@ func (h *Handler) CreateSeaRouteAPI(
 
 	draft, err =
 		h.Repository.GetDraftByUser(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	if err != nil {
@@ -242,19 +271,31 @@ func (h *Handler) CreateSeaRouteAPI(
 		http.StatusCreated,
 		serializer.FromSeaRoute(
 			draft,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		),
 	)
 }
 
 // GET /api/sea-routes/draft
 // Получение черновика текущего пользователя.
+
+// GetDraftAPI godoc
+// @Summary Получение черновика морского маршрута
+// @Description Получение черновика текущего пользователя
+// @Tags Морские маршруты
+// @Produce json
+// @Success 200 {object} serializer.SeaRoute
+// @Failure 401
+// @Failure 404
+// @Failure 500
+// @Security BearerAuth
+// @Router /sea-routes/draft [get]
 func (h *Handler) GetDraftAPI(
 	ctx *gin.Context,
 ) {
 	draft, err :=
 		h.Repository.GetDraftByUser(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	if err != nil {
@@ -275,7 +316,7 @@ func (h *Handler) GetDraftAPI(
 		http.StatusOK,
 		serializer.FromSeaRoute(
 			draft,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		),
 	)
 }
@@ -290,6 +331,20 @@ type PublishSeaRouteRequest struct {
 
 // PUT /api/sea-routes/draft
 // Публикация черновика текущего пользователя.
+
+// PublishSeaRouteAPI godoc
+// @Summary Публикация морского маршрута
+// @Description Заполнение параметров и публикация черновика текущего пользователя
+// @Tags Морские маршруты
+// @Accept json
+// @Produce json
+// @Param request body PublishSeaRouteRequest true "Параметры морского маршрута"
+// @Success 200 {object} serializer.SeaRoute
+// @Failure 400
+// @Failure 401
+// @Failure 404
+// @Security BearerAuth
+// @Router /sea-routes/draft [put]
 func (h *Handler) PublishSeaRouteAPI(
 	ctx *gin.Context,
 ) {
@@ -338,16 +393,14 @@ func (h *Handler) PublishSeaRouteAPI(
 
 	seaRoute, err :=
 		h.Repository.PublishDraft(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			*request.DistanceNauticalMiles,
 			*request.AveragePortDelayHours,
 			description,
 		)
 
 	if err != nil {
-		ctx.Status(
-			http.StatusNotFound,
-		)
+		ctx.Status(http.StatusNotFound)
 		return
 	}
 
@@ -355,13 +408,26 @@ func (h *Handler) PublishSeaRouteAPI(
 		http.StatusOK,
 		serializer.FromSeaRoute(
 			seaRoute,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		),
 	)
 }
 
 // GET /api/sea-routes/feed
 // Получение ленты опубликованных морских маршрутов.
+
+// GetSeaRouteFeedAPI godoc
+// @Summary Получение ленты морских маршрутов
+// @Description Получение первого, выбранного или следующего опубликованного маршрута
+// @Tags Морские маршруты
+// @Produce json
+// @Param sea_route_id query int false "ID текущего маршрута"
+// @Param next query bool false "Перейти к следующему маршруту"
+// @Success 200 {object} serializer.FeedSeaRoute
+// @Failure 400
+// @Failure 404
+// @Failure 500
+// @Router /sea-routes/feed [get]
 func (h *Handler) GetSeaRouteFeedAPI(
 	ctx *gin.Context,
 ) {
@@ -468,7 +534,7 @@ func (h *Handler) GetSeaRouteFeedAPI(
 	isLiked, err :=
 		h.Repository.
 			IsSeaRouteLikedByUser(
-				CurrentUser().ID,
+				ctx.GetUint("user_id"),
 				seaRoute.ID,
 			)
 
@@ -483,7 +549,7 @@ func (h *Handler) GetSeaRouteFeedAPI(
 		http.StatusOK,
 		serializer.FromSeaRouteFeed(
 			seaRoute,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			isLiked,
 		),
 	)
@@ -495,6 +561,21 @@ type SeaRouteLikeRequest struct {
 
 // POST /api/sea-routes/:id/likes
 // Установка или отмена лайка текущего пользователя.
+
+// SetSeaRouteLikeAPI godoc
+// @Summary Установка или отмена лайка
+// @Description Значение value=1 устанавливает лайк, value=0 отменяет
+// @Tags Морские маршруты
+// @Accept json
+// @Produce json
+// @Param id path int true "ID морского маршрута"
+// @Param request body SeaRouteLikeRequest true "Значение лайка"
+// @Success 200 {object} serializer.SeaRoute
+// @Failure 400
+// @Failure 401
+// @Failure 404
+// @Security BearerAuth
+// @Router /sea-routes/{id}/likes [post]
 func (h *Handler) SetSeaRouteLikeAPI(
 	ctx *gin.Context,
 ) {
@@ -544,7 +625,7 @@ func (h *Handler) SetSeaRouteLikeAPI(
 
 	seaRoute, err :=
 		h.Repository.SetSeaRouteLike(
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 			uint(id),
 			*request.Value,
 		)
@@ -560,13 +641,25 @@ func (h *Handler) SetSeaRouteLikeAPI(
 		http.StatusOK,
 		serializer.FromSeaRoute(
 			seaRoute,
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		),
 	)
 }
 
 // DELETE /api/sea-routes/:id
 // Логическое удаление маршрута текущего пользователя.
+
+// DeleteSeaRouteAPI godoc
+// @Summary Удаление морского маршрута
+// @Description Логическое удаление собственного маршрута
+// @Tags Морские маршруты
+// @Param id path int true "ID морского маршрута"
+// @Success 200
+// @Failure 400
+// @Failure 401
+// @Failure 404
+// @Security BearerAuth
+// @Router /sea-routes/{id} [delete]
 func (h *Handler) DeleteSeaRouteAPI(
 	ctx *gin.Context,
 ) {
@@ -595,7 +688,7 @@ func (h *Handler) DeleteSeaRouteAPI(
 		h.Repository.DeleteSeaRoute(
 			ctx.Request.Context(),
 			uint(id),
-			CurrentUser().ID,
+			ctx.GetUint("user_id"),
 		)
 
 	if err != nil {

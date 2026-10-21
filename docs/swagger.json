@@ -1,0 +1,598 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "API сервиса морских маршрутов Sea Routes\nРегистрация, аутентификация, маршруты, публикация и лайки.",
+        "title": "Sea Routes API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/auth": {
+            "post": {
+                "description": "Проверка логина и пароля и получение JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Авторизация"
+                ],
+                "summary": "Аутентификация пользователя",
+                "parameters": [
+                    {
+                        "description": "Логин и пароль",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_app_handler.AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_app_handler.AuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Отзыв JWT через blacklist Redis",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Авторизация"
+                ],
+                "summary": "Выход пользователя из системы",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/sea-routes": {
+            "get": {
+                "description": "Возвращает опубликованные маршруты с фильтрацией по расстоянию",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Получение списка морских маршрутов",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Минимальное расстояние",
+                        "name": "min_distance_nautical_miles",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Максимальное расстояние",
+                        "name": "max_distance_nautical_miles",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/sea_routes_internal_app_serializer.SeaRoute"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создание маршрута с фотографией и видео",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Создание черновика морского маршрута",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Название маршрута",
+                        "name": "name",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Фотография маршрута",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Видео маршрута",
+                        "name": "video",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.SeaRoute"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/sea-routes/draft": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Получение черновика текущего пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Получение черновика морского маршрута",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.SeaRoute"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Заполнение параметров и публикация черновика текущего пользователя",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Публикация морского маршрута",
+                "parameters": [
+                    {
+                        "description": "Параметры морского маршрута",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_app_handler.PublishSeaRouteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.SeaRoute"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/sea-routes/feed": {
+            "get": {
+                "description": "Получение первого, выбранного или следующего опубликованного маршрута",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Получение ленты морских маршрутов",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID текущего маршрута",
+                        "name": "sea_route_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Перейти к следующему маршруту",
+                        "name": "next",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.FeedSeaRoute"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/sea-routes/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Логическое удаление собственного маршрута",
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Удаление морского маршрута",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID морского маршрута",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/sea-routes/{id}/likes": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Значение value=1 устанавливает лайк, value=0 отменяет",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Морские маршруты"
+                ],
+                "summary": "Установка или отмена лайка",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID морского маршрута",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Значение лайка",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_app_handler.SeaRouteLikeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.SeaRoute"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/users": {
+            "post": {
+                "description": "Создание нового пользователя Sea Routes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Авторизация"
+                ],
+                "summary": "Регистрация пользователя",
+                "parameters": [
+                    {
+                        "description": "Логин и пароль",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_app_handler.RegisterUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/sea_routes_internal_app_serializer.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_app_handler.AuthRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_app_handler.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_app_handler.PublishSeaRouteRequest": {
+            "type": "object",
+            "properties": {
+                "average_port_delay_hours": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "distance_nautical_miles": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_app_handler.RegisterUserRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_app_handler.SeaRouteLikeRequest": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "integer"
+                }
+            }
+        },
+        "sea_routes_internal_app_serializer.FeedSeaRoute": {
+            "type": "object",
+            "properties": {
+                "average_port_delay_hours": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "distance_nautical_miles": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "is_creator": {
+                    "type": "integer"
+                },
+                "is_liked": {
+                    "type": "integer"
+                },
+                "likes_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "video": {
+                    "type": "string"
+                }
+            }
+        },
+        "sea_routes_internal_app_serializer.SeaRoute": {
+            "type": "object",
+            "properties": {
+                "average_port_delay_hours": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "distance_nautical_miles": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "is_creator": {
+                    "type": "integer"
+                },
+                "likes_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "video": {
+                    "type": "string"
+                }
+            }
+        },
+        "sea_routes_internal_app_serializer.User": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "login": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Введите Bearer и ваш JWT через пробел",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

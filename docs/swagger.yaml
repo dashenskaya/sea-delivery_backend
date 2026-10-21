@@ -1,0 +1,387 @@
+basePath: /api
+definitions:
+  internal_app_handler.AuthRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  internal_app_handler.AuthResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      login:
+        type: string
+      token_type:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  internal_app_handler.PublishSeaRouteRequest:
+    properties:
+      average_port_delay_hours:
+        type: integer
+      description:
+        type: string
+      distance_nautical_miles:
+        type: integer
+    type: object
+  internal_app_handler.RegisterUserRequest:
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+    type: object
+  internal_app_handler.SeaRouteLikeRequest:
+    properties:
+      value:
+        type: integer
+    type: object
+  sea_routes_internal_app_serializer.FeedSeaRoute:
+    properties:
+      average_port_delay_hours:
+        type: integer
+      description:
+        type: string
+      distance_nautical_miles:
+        type: integer
+      id:
+        type: integer
+      image:
+        type: string
+      is_creator:
+        type: integer
+      is_liked:
+        type: integer
+      likes_count:
+        type: integer
+      name:
+        type: string
+      video:
+        type: string
+    type: object
+  sea_routes_internal_app_serializer.SeaRoute:
+    properties:
+      average_port_delay_hours:
+        type: integer
+      description:
+        type: string
+      distance_nautical_miles:
+        type: integer
+      id:
+        type: integer
+      image:
+        type: string
+      is_creator:
+        type: integer
+      likes_count:
+        type: integer
+      name:
+        type: string
+      video:
+        type: string
+    type: object
+  sea_routes_internal_app_serializer.User:
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: |-
+    API сервиса морских маршрутов Sea Routes
+    Регистрация, аутентификация, маршруты, публикация и лайки.
+  title: Sea Routes API
+  version: "1.0"
+paths:
+  /auth:
+    post:
+      consumes:
+      - application/json
+      description: Проверка логина и пароля и получение JWT
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_handler.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_app_handler.AuthResponse'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Аутентификация пользователя
+      tags:
+      - Авторизация
+  /logout:
+    post:
+      description: Отзыв JWT через blacklist Redis
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Выход пользователя из системы
+      tags:
+      - Авторизация
+  /sea-routes:
+    get:
+      description: Возвращает опубликованные маршруты с фильтрацией по расстоянию
+      parameters:
+      - description: Минимальное расстояние
+        in: query
+        name: min_distance_nautical_miles
+        type: integer
+      - description: Максимальное расстояние
+        in: query
+        name: max_distance_nautical_miles
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/sea_routes_internal_app_serializer.SeaRoute'
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Получение списка морских маршрутов
+      tags:
+      - Морские маршруты
+    post:
+      consumes:
+      - multipart/form-data
+      description: Создание маршрута с фотографией и видео
+      parameters:
+      - description: Название маршрута
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Фотография маршрута
+        in: formData
+        name: image
+        required: true
+        type: file
+      - description: Видео маршрута
+        in: formData
+        name: video
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.SeaRoute'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Создание черновика морского маршрута
+      tags:
+      - Морские маршруты
+  /sea-routes/{id}:
+    delete:
+      description: Логическое удаление собственного маршрута
+      parameters:
+      - description: ID морского маршрута
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+      security:
+      - BearerAuth: []
+      summary: Удаление морского маршрута
+      tags:
+      - Морские маршруты
+  /sea-routes/{id}/likes:
+    post:
+      consumes:
+      - application/json
+      description: Значение value=1 устанавливает лайк, value=0 отменяет
+      parameters:
+      - description: ID морского маршрута
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Значение лайка
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_handler.SeaRouteLikeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.SeaRoute'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+      security:
+      - BearerAuth: []
+      summary: Установка или отмена лайка
+      tags:
+      - Морские маршруты
+  /sea-routes/draft:
+    get:
+      description: Получение черновика текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.SeaRoute'
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: Получение черновика морского маршрута
+      tags:
+      - Морские маршруты
+    put:
+      consumes:
+      - application/json
+      description: Заполнение параметров и публикация черновика текущего пользователя
+      parameters:
+      - description: Параметры морского маршрута
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_handler.PublishSeaRouteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.SeaRoute'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+      security:
+      - BearerAuth: []
+      summary: Публикация морского маршрута
+      tags:
+      - Морские маршруты
+  /sea-routes/feed:
+    get:
+      description: Получение первого, выбранного или следующего опубликованного маршрута
+      parameters:
+      - description: ID текущего маршрута
+        in: query
+        name: sea_route_id
+        type: integer
+      - description: Перейти к следующему маршруту
+        in: query
+        name: next
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.FeedSeaRoute'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Получение ленты морских маршрутов
+      tags:
+      - Морские маршруты
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Создание нового пользователя Sea Routes
+      parameters:
+      - description: Логин и пароль
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_app_handler.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/sea_routes_internal_app_serializer.User'
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+      summary: Регистрация пользователя
+      tags:
+      - Авторизация
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: Введите Bearer и ваш JWT через пробел
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
